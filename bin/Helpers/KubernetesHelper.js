@@ -42,7 +42,7 @@ class KubernetesHelper {
     const { version } = JSON.parse(packageJSON)
     let imageTagDocker = ''
     const {google} = this.configFile
-    for(const prefix of [`'-alpha-'`, '-beta-', '-']) {
+    for(const prefix of [`-alpha-`, '-beta-', '-']) {
       const imageTag = `${version}${prefix}${commit}`
       const url = `${google.GCR_HOST}/${google.GCR_PROJECT_ID}/${repoName}:${imageTag}`
       const exists = await this.existsImage(url)
