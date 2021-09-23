@@ -16,6 +16,11 @@ para help digite
 ```sh
 deployerman -h
 ```
+# Requisitos
+- Git configurado com ssh
+- gcloud instalado
+- docker instalado
+- GCR configurado com o docker. Caso não saiba como fazer [siga esse tutorial](https://cloud.google.com/container-registry/docs/)
 
 --- 
 Precisa ter o .env que existe no lens, contando com CONTAINER_PORT GCR E TALS
