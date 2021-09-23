@@ -7,7 +7,7 @@ const KubernetesHelper = require('../Helpers/KubernetesHelper')
 
 module.exports = {
   command: 'init',
-  describe: 'Load config',
+  describe: 'Dado um objeto de configuração, faz deploy de branch especificas para um ns de k8 ja existente',
   example: '$0 init -c ./config.json',
   alias: ['c', 'config'],
   describeFunction: (yargs) => {

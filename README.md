@@ -2,7 +2,22 @@
 
 Essa lib faz deploy de branch especificas em ambientes ja criados
 
+# Example
+> node ./bin/index.js init -c config.json
 
+ou 
+
+```sh
+npm install -g .
+deployerman init -c config.json
+```
+
+para help digite
+```sh
+deployerman -h
+```
+
+--- 
 Precisa ter o .env que existe no lens, contando com CONTAINER_PORT GCR E TALS
 
 Ter esse tuto completo https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud
