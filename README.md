@@ -1,3 +1,8 @@
+# Descrição
+
+Essa lib faz deploy de branch especificas em ambientes ja criados
+
+
 Precisa ter o .env que existe no lens, contando com CONTAINER_PORT GCR E TALS
 
 Ter esse tuto completo https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud
