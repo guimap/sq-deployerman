@@ -1,0 +1,25 @@
+{
+  "name": "k8-command",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/index.js init -c ./config.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "deployerman": "./bin/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "dotenv": "^10.0.0",
+    "got": "^11.8.2",
+    "nunjucks": "^3.2.3",
+    "yaml": "^1.10.2",
+    "yargs": "^17.1.1"
+  }
+}

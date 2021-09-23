@@ -1,0 +1,17 @@
+{
+  "projects": [
+    {
+      "repo": "https://github.com/eu/repo",
+      "branch": "any",
+      "kub_namespace": "staging",
+      "envfile": "./.env",
+      "kubServiceName": "svc-stg",
+      "kubContainerPort": "6789"
+    }
+  ],
+  "google": {
+    "GCR_HOST": "gcr.io",
+    "GCR_PROJECT_ID": "example"
+
+  }
+}

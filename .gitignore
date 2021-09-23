@@ -1,0 +1,6 @@
+commands/github*/**/*
+node_modules/
+.vscode/
+config.json
+!config.example.json
+.env*
