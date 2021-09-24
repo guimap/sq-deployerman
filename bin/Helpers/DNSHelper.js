@@ -28,8 +28,8 @@ class DNSHelper {
       })
       console.log({records})
       // await this.zone.addRecords(records)
-      console.log(`Dominio ${domain} criado...`)
-      console.log(newRecord)
+      console.log(`${domains.length} criado criado...`)
+      // console.log(newRecord)
     }
     console.log(records)
   }
