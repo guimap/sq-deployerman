@@ -71,7 +71,9 @@ module.exports = {
     } catch (err) {
       console.error(err)
     } finally {
-      fs.rmSync(githubProjectsFolderPath, { recursive: true })
+      if (fs.existsSync(githubProjectsFolderPath)) {
+        fs.rmSync(githubProjectsFolderPath, { recursive: true })
+      }
     }
 
    
