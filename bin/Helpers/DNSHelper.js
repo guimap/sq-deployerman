@@ -13,16 +13,21 @@ class DNSHelper {
     this.zone = this.dns.zone('squidit')
   }
 
-  async addDomain(domain) {
+  async addDomains(domains) {
     const records = await this.getRecords()
-    const exists = records.filter(record => record.name === domain).length
-    if (!exists) {
-      const newRecord = this.zone.record('A', {
-        name: domain,
-        ttl: 1800,
-        rrdata: [this.configFile.sandbox.kubernetes.cluster_ip]
+    const domainsWhichNotExists = records.filter(record => !domains.includes(record.name)).length
+
+    if (domainsWhichNotExists.length > 0) {
+
+      const records = domainsWhichNotExists.map(domain => {
+        return this.zone.record('A', {
+          name: domain,
+          ttl: 1800,
+          rrdata: [this.configFile.sandbox.kubernetes.cluster_ip]
+        })
       })
-      await this.zone.addRecords([newRecord])
+      console.log({records})
+      // await this.zone.addRecords(records)
       console.log(`Dominio ${domain} criado...`)
       console.log(newRecord)
     }
