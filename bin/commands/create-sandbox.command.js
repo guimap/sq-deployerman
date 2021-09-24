@@ -8,6 +8,7 @@ const RequirementsHelper = require('../Helpers/RequirementsHelper')
 const DNSHelper = require('../Helpers/DNSHelper')
 const { deepStrictEqual } = require('assert')
 const { stderr } = require('chalk')
+const { config } = require('dotenv')
 module.exports = {
   command: 'create-sandbox',
   describe: 'Cria um ambiente isolado em um namespace',
@@ -30,18 +31,22 @@ module.exports = {
 
       const dnsHelper = new DNSHelper(configFile)
       const sandboxName = sandbox.name
+      const newNamespace = sandboxName
       //  Create folder
       const pathToSave = `${tempory_folder}/${sandboxName}`
       if (!fs.existsSync(pathToSave)) {
         fs.mkdirSync(pathToSave)
       }
-
-      const newNamespacce = configFile.sandbox.name
+      
+      const kubFolderSandbox = path.join(pathToSave, 'kub-sandbox')
+      if (!fs.existsSync(kubFolderSandbox)) fs.mkdirSync(kubFolderSandbox)
+      
       //  Create YAML namespace
+      await createNamespaceYaml(configFile, kubFolderSandbox, newNamespace)
 
-
-      // await downloadYamls(configFile, `${pathToSave}/kub-copy`)
-      await createModifyYaml(configFile, `${pathToSave}/kub-copy`, newNamespacce)
+      // await downloadYamls(configFile, `${pathToSave}/kub-reference`)
+      const { domains } = await createModifyYaml(configFile, `${pathToSave}/kub-reference`, kubFolderSandbox, newNamespace)
+      console.log(domains, kubFolderSandbox)
 
       // await dnsHelper.addDomain(`${sandboxName}-app.squidit.com.br.`)
     } catch (err) {
@@ -84,25 +89,54 @@ function runFile(execPath) {
   })
 }
 
-async function createModifyYaml(configFile, yamlFolder, newNamespacce) {
-  const kubFolderSandbox = path.join(configFile.tempory_folder, 'kub-sandbox')
+async function createNamespaceYaml (configFile, folderToSave, namespaceName) {
+  const namespaceSpec = {
+    apiVersion: 'v1',
+    kind: 'Namespace',
+    metadata: {
+      name: namespaceName,
+      labels: {
+        name: namespaceName,
+        generatedBy: 'deployerman'
+      }
+    }
+  }
+  const yamlContent = yaml.stringify(namespaceSpec)
+  return new Promise((resolve, reject) => {
+    try {
+      fs.writeFileSync(`${folderToSave}/${namespaceName}-namespace.yml`, yamlContent)
+      resolve(true)
+    } catch(err) {
+      reject(err)
+    }
+  })
+}
+
+async function createModifyYaml(configFile, yamlFolder, kubFolderSandbox, newNamespace) {
+  const fieldsToDelete = [
+    'metadata.uid',
+    'metadata.selfLink',
+    'metadata.resourceVersion',
+    'metadata.generation',
+    'metadata.creationTimestamp'
+  ]
   if (!fs.existsSync(kubFolderSandbox)) fs.mkdirSync(kubFolderSandbox)
+
   const domainsToCreate = []
+  const nameSandbox = configFile.sandbox.name
 
   //  Ingress Modify
   const ingressFiles = fs.readdirSync(path.join(yamlFolder, 'ingress'))
-  const nameSandbox = configFile.sandbox.name
   for(const yamlPath of ingressFiles) {
 
     const yamlContent = fs.readFileSync(path.join(yamlFolder, 'ingress', yamlPath)).toString()
     const parsedYaml = yaml.parse(yamlContent)
-    parsedYaml.metadata.namespace = newNamespacce
-    const fieldsToDelete = [
-      'metadata.uid',
-      'metadata.selfLink',
-      'metadata.resourceVersion',
-      'metadata.generation',
-    ]
+    parsedYaml.metadata.namespace = newNamespace
+    parsedYaml.metadata.labels = {
+      ...parsedYaml.metadata.labels,
+      generatedBy: 'deployerman'
+    }
+  
     for(const removeField of fieldsToDelete) {
       lodash.unset(parsedYaml, removeField)
     }
@@ -138,13 +172,56 @@ async function createModifyYaml(configFile, yamlFolder, newNamespacce) {
 
 
   //  Deployment Modify
-
+  const deploymentsFiles = fs.readdirSync(path.join(yamlFolder, 'deployments'))
+  for (const deploymentPath of deploymentsFiles) {
+    const yamlContent = fs.readFileSync(path.join(yamlFolder, 'deployments', deploymentPath)).toString()
+    const parsedYaml = yaml.parse(yamlContent)
+    parsedYaml.metadata.namespace = newNamespace
+    parsedYaml.metadata.labels = {
+      ...parsedYaml.metadata.labels,
+      generatedBy: 'deployerman'
+    }
+    
+    for(const removeField of fieldsToDelete) {
+      lodash.unset(parsedYaml, removeField)
+    }
+    const namePod = parsedYaml.metadata.name.replace(/\-\w+$/, '')
+    console.log(parsedYaml )
+    if (!fs.existsSync(path.join(kubFolderSandbox, namePod))) {
+      fs.mkdirSync(path.join(kubFolderSandbox, namePod))
+    }
+    const newYamlContent = yaml.stringify(parsedYaml)
+    fs.writeFileSync(path.join(kubFolderSandbox, namePod, `${namePod}-deployment.yml`), newYamlContent)
+  }
 
 
   //  Service Modify
+  const servicesFiles = fs.readdirSync(path.join(yamlFolder, 'services'))
+  for (const deploymentPath of servicesFiles) {
+    const yamlContent = fs.readFileSync(path.join(yamlFolder, 'services', deploymentPath)).toString()
+    const parsedYaml = yaml.parse(yamlContent)
+    parsedYaml.metadata.namespace = newNamespace
+    parsedYaml.metadata.labels = {
+      ...parsedYaml.metadata.labels,
+      generatedBy: 'deployerman'
+    }
+    
+    for(const removeField of fieldsToDelete) {
+      lodash.unset(parsedYaml, removeField)
+    }
+    const namePod = parsedYaml.metadata.name.replace(/\-\w+$/, '')
+    console.log(parsedYaml )
+    if (!fs.existsSync(path.join(kubFolderSandbox, namePod))) {
+      fs.mkdirSync(path.join(kubFolderSandbox, namePod))
+    }
+    const newYamlContent = yaml.stringify(parsedYaml)
+    fs.writeFileSync(path.join(kubFolderSandbox, namePod, `${namePod}-svc.yml`), newYamlContent)
+  }
+
 
   console.log('Done..')
   return {
-    domains: domainsToCreate
+    domains: domainsToCreate,
+    savedFolder: kubFolderSandbox
   }
 }
