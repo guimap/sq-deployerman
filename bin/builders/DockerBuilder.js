@@ -11,8 +11,8 @@ class DockerBuilder {
     this.entryPoint = ''
   }
 
-  setFrom(image, version) {
-    this.dockerfileContent += `FROM ${image}:${version || 'latest'}\n`
+  setFrom(image, version, alias = '') {
+    this.dockerfileContent += `FROM gcr.io/squid-apis/${image}:${version || 'latest'} ${alias ? `as ${alias}` : '' }\n`
     return this
   }
 

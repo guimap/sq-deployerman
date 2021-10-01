@@ -16,8 +16,10 @@ class GithubHelper {
       const repoURL = `git@github.com:${repoName.join('/')}.git`
       const [nameRepo] = repoName.slice(-1)
       const pathToSave = path.join(projectPath, nameRepo)
-      this.createIfNotExists(pathToSave)
-      await this.clone(repoURL, branch, pathToSave)
+      if (!this.projectExists(pathToSave)) {
+        this.createIfNotExists(pathToSave)
+        await this.clone(repoURL, branch, pathToSave)
+      }
       const commit = await this.getCurrentCommit(pathToSave)
       return {
         localRepoPath: pathToSave,
@@ -58,6 +60,10 @@ class GithubHelper {
     if (!fs.existsSync(path)) {
       fs.mkdirSync(path)
     }
+  }
+
+  projectExists(path) {
+    return fs.existsSync(path)
   }
   
 }

@@ -3,39 +3,65 @@ const yaml = require('yaml')
 const path = require('path')
 const DockerBuilder = require('../builders/DockerBuilder')
 const nunjuncks = require('nunjucks')
+const {execFileSync} = require('child_process')
 
 class DockerHelper {
   constructor(configFile) {
     this.configFile = configFile
   }
 
-  pushImage (repoPath, env) {
+  pushImage (repoPath, env, imageTagPrefix, buildCommands = [], { nodeTag, buildFolder, commit }) {
    
 
     // const werckerParsedContent = nunjuncks.renderString(werckerYmlContent, {...env})
 
     // const werkcerParse = yaml.parse(werckerParsedContent)
-    const {
-      id: typeNode,
-      tag
-    } = this.getBoxInfo(repoPath, env)
+    // const {
+    //   id: typeNode,
+    //   tag
+    // } = this.getBoxInfo(repoPath, env)
+    const typeNode = 'node'
+    const tag = nodeTag
 
     const containerPort = env.CONTAINER_PORT
       
-
+    let packageVersion = {}
+    const packageJsonPath = path.resolve(path.join(repoPath, 'package.json'))
+    if (fs.existsSync(packageJsonPath)) {
+      packageVersion = require(packageJsonPath)
+    }
+    const version = packageVersion.version || '1.0.0'
+    const imageTag = `deployerman-${imageTagPrefix}-${commit}-${version}`
 
     const dockerFileBuilder = new DockerBuilder()
     const dockerContent = dockerFileBuilder
-      .setFrom(typeNode, tag)
-      .setWorkdir('/usr/src/app')
-      .addCopyCommand('package*.json ./')
-      .addRunCommand('npm install')
+      .setFrom(typeNode, tag, 'build')
+      .setWorkdir('/pipeline/source/')
+      .addCopyCommand('package.json ./')
       .addCopyCommand('. .')
+      .addRunCommand('npm install')
+
+    if (buildCommands && buildCommands.length) {
+      for ( const command of buildCommands) {
+        dockerContent.addRunCommand(command)
+      }
+    }
+
+    dockerFileBuilder.setFrom('nginx', '1.13-alpine')
+      .addCopyCommand('--from=build /pipeline/source/ /pipeline/source/')
+      .addRunCommand(`sed -i -e "s/@PORT/${containerPort}/g" /pipeline/source/kub/nginx.conf`)
+      .setEntryPoint(`nginx -c /pipeline/source/kub/nginx.conf -g "daemon off;"`)
+      .setWorkdir(`/usr/share/nginx/html/${buildFolder}`)
       .setExposePort(containerPort||6789)
-      .setEntryPoint("npm start")
-      .build()
     //  gera um dockerfile
-    fs.writeFileSync(`${repoPath}/Dockerfile`, dockerContent)
+    fs.writeFileSync(`${repoPath}/Dockerfile`, dockerContent.build())
+
+
+    return {
+      imageTag,
+
+    }
+
   }
 
   getBoxInfo(repoPath, env) {

@@ -20,9 +20,11 @@ class RequirementsHelper {
     const configFile = JSON.parse(fs.readFileSync(path.join(relativePath, configPath)))
     const rulesToValidate = {
       init: () => {
+        this.createProjectFolder(configFile)
         this.projectShouldExists(configFile)
       },
       'create-sandbox': () => {
+        this.createProjectFolder(configFile)
         this.sandboxPropShouldExists(configFile)
       }
     }
@@ -46,6 +48,10 @@ class RequirementsHelper {
     if (!configFile.sandbox.kubernetes.reference_namespaces) throw new Error(`prop sandbox.kubernetes.reference_namespaces is required`)
     if (!configFile.sandbox.kubernetes.reference_namespaces.length) throw new Error(`prop sandbox.kubernetes should have at least one`)
     return true
+  }
+
+  createProjectFolder (configFile) {
+    if (configFile.tempory_folder && !fs.existsSync(configFile.tempory_folder)) fs.mkdirSync(configFile.tempory_folder, { recursive: true })
   }
 
   configFileExists(configPath, relativePath = null) {

@@ -1,17 +1,53 @@
 {
+  "tempory_folder": "./tmp",
+  "sandbox": {
+    "name": "pxe",
+    "namespace_reference": "staging",
+    "credentials_path": "./credentials.json",
+    "kubernetes": {
+      "cluster_ip": "35.196.169.31",
+      "reference_namespaces": ["staging"]
+    },
+    "frotend_repos": [
+      {
+        "repo": "https://github.com/squidit/web-ironman",
+        "endpointFile": "src/environments/environment.ts",
+        "branch": "release",
+        "envFile": ".env.ironman",
+        "domainPrefix": "portal",
+        "kubServiceName": "ironman",
+        "node_tag": "erbium",
+        "build_commands": [
+          "npm run build"
+        ]
+      },
+      {
+        "repo": "https://github.com/squidit/web-squidhub",
+        "endpointFile": "src/api.endpoints.js",
+        "branch": "feature/sandbox-change",
+        "envFile": ".env.hub",
+        "domainPrefix": "app",
+        "kubServiceName": "hub",
+        "node_tag": "dubnium",
+        "build_commands": [
+          "npm run build-semantic",
+          "npm run build"
+        ]
+      }
+    ]
+  },
   "projects": [
     {
-      "repo": "https://github.com/eu/repo",
-      "branch": "any",
-      "kub_namespace": "staging",
-      "envfile": "./.env",
-      "kubServiceName": "svc-stg",
+      "repo": "https://github.com/squidit/api-heimdall",
+      "branch": "release",
+      "envfile": "./.env.heimdall",
+      "kubServiceName": "heim-stg",
       "kubContainerPort": "6789"
     }
   ],
   "google": {
     "GCR_HOST": "gcr.io",
-    "GCR_PROJECT_ID": "example"
-
+    "GCR_PROJECT_ID": "squid-apis"
   }
+  
 }
