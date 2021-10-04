@@ -61,7 +61,7 @@ module.exports = {
       await createNamespaceYaml(configFile, kubNamespaceFolder, newNamespace)
 
       console.log(`Clone YAML References`)
-      // await downloadYamls(configFile, `${pathToSave}/kub-reference`)
+      await downloadYamls(configFile, `${pathToSave}/kub-reference`)
 
       console.log(`Create modify yaml`)
       const { domains } = await createModifyYaml(configFile, `${pathToSave}/kub-reference`, kubFolderSandbox, newNamespace)
@@ -286,7 +286,6 @@ async function duplicateFrontend (configFile, pathToSave, domains) {
         repoName,
         commit
       } = await githubHelper.pullBranch({repo, branch}, pathToSave)
-      
       const {parsed} = require('dotenv').config({
         path: frontendRepo.envFile
       })
@@ -315,7 +314,6 @@ async function duplicateFrontend (configFile, pathToSave, domains) {
       //  Gerar um dockerfile
       const isTs = endpointFile.includes('.ts')
 
-
       console.log(`Gerando Dockerfile...`)
       const { imageTag } = dockerHelper.pushImage(
         localRepoPath,
@@ -331,13 +329,24 @@ async function duplicateFrontend (configFile, pathToSave, domains) {
       //  Adicionar a img no repository
       const domainFrontEnd = `${configFile. sandbox.name}-${frontendRepo.domainPrefix}.squidit.com.br`
       domains.push(domainFrontEnd)
-      console.log(`Dando push no arquivo ${path.join(binariesFolder, `push-image-docker.sh`)} ${[repoName, imageTag].join(' ')}`)
-      execFileSync(path.join(binariesFolder, `push-image-docker.sh`),[repoName, imageTag], { cwd: localRepoPath })
-      //  Gera os yaml dentro da pasta kub/
+
       envContent.IMAGE_TAG = imageTag
       envContent.REACT_APP_PRODUCTION_HOST = `${domainFrontEnd}`
       envContent.REACT_APP_API_VERSION = `v1`
       
+      //  Add .env into folder
+      const envPath = path.join(localRepoPath, '.env')
+      const envContentString = Object.keys(envContent).reduce((content, key) => {
+        content+=`${key}=${envContent[key]}\n`
+        return content
+      })
+      fs.writeFileSync(envPath, envContentString)
+
+      console.log(`Dando push no arquivo ${path.join(binariesFolder, `push-image-docker.sh`)} ${[repoName, imageTag].join(' ')}`)
+      execFileSync(path.join(binariesFolder, `push-image-docker.sh`),[repoName, imageTag], { cwd: localRepoPath })
+      //  Gera os yaml dentro da pasta kub/
+     
+
 
       const kubBasePath = path.join(localRepoPath, 'kub')
       const kubFilesTemplate = fs.readdirSync(kubBasePath).filter(file => file.endsWith('yml.template'))

@@ -22,7 +22,10 @@ deployerman -h
 - docker instalado
 - Previlégios de criar namespaces e dar apply no kubernetes
 - Previlegios de criar DNS cloud domain
-- GCR configurado com o docker. Caso não saiba como fazer [siga esse tutorial](https://cloud.google.com/container-registry/docs/)
+- GCR configurado com o docker. Caso não saiba como fazer [siga esse tutorial](https://cloud.google.com/container-registry/docs/advanced-authentication)
+```sh
+gcloud auth configure-docker
+```
 
 --- 
 Precisa ter o .env que existe no lens, contando com CONTAINER_PORT GCR E TALS

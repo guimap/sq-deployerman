@@ -36,6 +36,7 @@ class GithubHelper {
   async clone(urlGit, branch, pathToSave) {
     return new Promise(async (resolve, reject) => {
       const commandGitCloneArgs = `clone -b ${branch} ${urlGit} ${pathToSave}`
+      console.log(`clone -b ${branch} ${urlGit} ${pathToSave}`)
       const git = spawn('git', commandGitCloneArgs.split(' '))
       git.on('exit', code => {
         if (code !== 0) return reject(new Error(`Cannot clone ${urlGit}`))
