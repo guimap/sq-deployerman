@@ -321,7 +321,7 @@ class KubernetesDuplicater {
       const parsedYaml = yaml.parse(yamlContent)
       const namePod = this.getNamePod(parsedYaml.metadata.name)
       const [nameProject] = namePod.split('-')
-      const newName = namePod.replace(/\-\w+/, `-${project.target_namespace}`)
+      const newName = namePod.replace(/\-\w+/, `-${this.configFile.sandbox.name}`)
       parsedYaml.metadata.namespace = this.newNamespace
       parsedYaml.metadata.labels = {
         ...parsedYaml.metadata.labels,
@@ -358,7 +358,7 @@ class KubernetesDuplicater {
       
       const newYamlContent = yaml.stringify(parsedYaml)
         .replace(new RegExp(namePod,'ig'), newName)
-        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${project.target_namespace}`)
+        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${namePod.replace(/\-\w+/, `-${this.configFile.sandbox.name}`)}`)
       const projectFolder = path.join(this.kubFolderSandboxApps, namePod)
       this.createFolderIfNotExists(projectFolder)
       fs.writeFileSync(path.join(projectFolder, `${namePod}-ingress.yml`), newYamlContent)
@@ -376,7 +376,7 @@ class KubernetesDuplicater {
       const parsedYaml = yaml.parse(yamlContent)
       const namePod = this.getNamePod(parsedYaml.metadata.name)
       const [nameProject] = namePod.split('-')
-      const newName = namePod.replace(/\-\w+/, `-${project.target_namespace}`)
+      const newName = namePod.replace(/\-\w+/, `-${this.configFile.sandbox.name}`)
       parsedYaml.metadata.namespace = this.newNamespace
       parsedYaml.metadata.labels = {
         ...parsedYaml.metadata.labels,
@@ -396,7 +396,8 @@ class KubernetesDuplicater {
           const enviroments = container.env || []
           for (const environment of enviroments) {
             if (this.isDomainSquidit(environment.value)) {
-              environment.value = environment.value.replace(/((http[s]*)\:\/)*\w+\-/ig, `${this.newNamespace}-`)
+              if (environment.value.includes('.squidit')) environment.value = environment.value.replace(/((http[s]*)\:\/)*\w+\-/ig, `${this.newNamespace}-`)
+              else environment.value = environment.value.replace(/\-\w+/,  `-${this.newNamespace}`)
             }
           }
         }
@@ -407,7 +408,7 @@ class KubernetesDuplicater {
       this.createFolderIfNotExists(projectFolder)
       const newYamlContent = yaml.stringify(parsedYaml)
         .replace(new RegExp(namePod,'ig'), newName)
-        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${project.target_namespace}`)
+        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${this.configFile.sandbox.name}`)
       
       fs.writeFileSync(path.join(this.kubFolderSandboxApps, namePod, `${namePod}-deployment.yml`), newYamlContent)
     }
@@ -421,7 +422,7 @@ class KubernetesDuplicater {
       const parsedYaml = yaml.parse(yamlContent)
       const namePod = this.getNamePod(parsedYaml.metadata.name)
       const [nameProject] = namePod.split('-')
-      const newName = namePod.replace(/\-\w+/, `-${project.target_namespace}`)
+      const newName = namePod.replace(/\-\w+/, `-${this.configFile.sandbox.name}`)
       parsedYaml.metadata.namespace = this.newNamespace
       parsedYaml.metadata.labels = {
         ...parsedYaml.metadata.labels,
@@ -441,7 +442,7 @@ class KubernetesDuplicater {
       this.createFolderIfNotExists(projectFolder)
       const newYamlContent = yaml.stringify(parsedYaml)
         .replace(new RegExp(namePod,'ig'), newName)
-        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${project.target_namespace}`)
+        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${this.configFile.sandbox.name}`)
       fs.writeFileSync(path.join(this.kubFolderSandboxApps, namePod, `${namePod}-svc.yml`), newYamlContent)
     }
   }
@@ -463,7 +464,8 @@ class KubernetesDuplicater {
   isDomainSquidit(url) {
     try {
       new URL(url)
-      return url.includes('.squidit.com.br')
+      const rgxIsSquid = /http[s]*\:\/\/\w+(\.squidit|\-\w+)/gm
+      return rgxIsSquid.exec(url)
     } catch (err) {
       return false
     }
