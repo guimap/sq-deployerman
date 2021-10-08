@@ -19,9 +19,11 @@ deployerman -h
 # Requisitos
 - Git configurado com ssh
 - gcloud instalado com versão Google Cloud SDK 358.0.0 ou superior
+- gcloud instalado de forma global - https://cloud.google.com/sdk/docs/install#deb
 - docker instalado
 - Previlégios de criar namespaces e dar apply no kubernetes
 - Previlegios de criar DNS cloud domain
+- Baixar um `credentials.json` do seu usuario, com permissão de `storage.bucket`
 - GCR configurado com o docker. Caso não saiba como fazer [siga esse tutorial](https://cloud.google.com/container-registry/docs/advanced-authentication)
 ```sh
 gcloud auth configure-docker

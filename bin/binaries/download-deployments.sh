@@ -25,6 +25,9 @@ TOTAL_DEPLOYMENT=$($KUB_COMMAND | wc -l)
 ROW=0
 while read DEPLOY; do
   ((++ROW))
+  if [[ -f "$PATH_DEPLOY/$DEPLOY.yml" ]]; then
+    continue
+  fi
   echo "[$ROW/$TOTAL_DEPLOYMENT] DOWNLOADING $DEPLOY..."
   kubectl get deploy $DEPLOY -n $NAMESPACE -o yaml > "$PATH_DEPLOY/$DEPLOY.yml"
 

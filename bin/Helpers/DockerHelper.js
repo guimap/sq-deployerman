@@ -10,16 +10,7 @@ class DockerHelper {
     this.configFile = configFile
   }
 
-  pushImage (repoPath, env, imageTagPrefix, buildCommands = [], { nodeTag, buildFolder, commit }) {
-   
-
-    // const werckerParsedContent = nunjuncks.renderString(werckerYmlContent, {...env})
-
-    // const werkcerParse = yaml.parse(werckerParsedContent)
-    // const {
-    //   id: typeNode,
-    //   tag
-    // } = this.getBoxInfo(repoPath, env)
+  pushImage (repoPath, env, imageTagPrefix, buildCommands = [], { nodeTag, buildFolder, commit, repoName }) {
     const typeNode = 'node'
     const tag = nodeTag
 
@@ -33,6 +24,7 @@ class DockerHelper {
     const version = packageVersion.version || '1.0.0'
     const imageTag = `deployerman-${imageTagPrefix}-${commit}-${version}`
 
+    console.log('Criando arquivo Dockerfile')
     const dockerFileBuilder = new DockerBuilder()
     const dockerContent = dockerFileBuilder
       .setFrom(typeNode, tag, 'build')
@@ -56,10 +48,12 @@ class DockerHelper {
     //  gera um dockerfile
     fs.writeFileSync(`${repoPath}/Dockerfile`, dockerContent.build())
 
-
+    //  da push na imagem
+    console.log(`Dando push na imagem...`)
+    const binariesFolder = path.join(path.resolve(__dirname, '../'), 'binaries')
+    execFileSync(path.join(binariesFolder, `push-image-docker.sh`),[repoName, imageTag], { cwd: repoPath })
     return {
-      imageTag,
-
+      imageTag
     }
 
   }
