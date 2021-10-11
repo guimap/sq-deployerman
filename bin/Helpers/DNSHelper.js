@@ -1,4 +1,7 @@
 const {DNS} = require('@google-cloud/dns')
+const path = require('path')
+const fs = require('fs')
+const yaml = require('yaml')
 
 class DNSHelper {
   constructor(configFile) {
@@ -24,7 +27,6 @@ class DNSHelper {
     if (domainsWhichNotExists.length > 0) {
 
       const recordsToAdd = domainsWhichNotExists.map(domain => {
-        const subDomain = domain.replace(`.squidit.com.br`, '')
         return this.zone.record('A', {
           name: `${domain}.`,
           ttl: 300,
@@ -36,6 +38,41 @@ class DNSHelper {
       // console.log(newRecord)
     }
     // console.log(records)
+  }
+
+  async deleteDNS() {
+    const {sandbox, tempory_folder} = this.configFile
+    try {
+      const sandboxFolder = path.join(tempory_folder, sandbox.name, 'kub-sandbox', 'apps')
+      const dns = this.getDNSOfCurrentSandbox(sandboxFolder)
+      const recordToDelete = dns.map(domain => {
+        return this.zone.record('A', {
+          name: `${domain}.`,
+          ttl: 300,
+          data: [this.configFile.sandbox.kubernetes.cluster_ip]
+        })
+      })
+      console.log(`Dropping cloud DNS...`)
+      await this.zone.deleteRecords(recordToDelete)
+
+    } catch (err) {
+      throw err
+    }
+  }
+
+  getDNSOfCurrentSandbox (sandboxFolderApps) {
+    const projects = fs.readdirSync(sandboxFolderApps)
+    const dnsList = new Set()
+    for (const project of projects) {
+      const ingressPath = path.join(sandboxFolderApps, project, `${project}-ingress.yml`)
+      if (!fs.existsSync(ingressPath)) continue
+      const yamlContent = fs.readFileSync(ingressPath).toString()
+      const yamlParsed = yaml.parse(yamlContent)
+      const hosts = yamlParsed.spec.rules.filter(rule => !!rule.host)
+      const domains = hosts.map(host => host.host)
+      dnsList.add(...domains)
+    }
+    return Array.from(dnsList)
   }
 
   async getRecords () {

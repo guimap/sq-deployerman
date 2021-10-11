@@ -3,10 +3,6 @@ const path = require('path')
 const yaml = require('yaml')
 const nunjuncks = require('nunjucks')
 const lodash = require('lodash')
-const {spawn, execSync, exec, execFile, execFileSync} = require('child_process')
-const { Writable  } = require('stream')
-const got = require('got')
-const { stdout } = require('process')
 
 class KubernetesHelper {
   constructor(configFile) {
@@ -190,6 +186,51 @@ class KubernetesHelper {
     //     }
     //   })
     })
+  }
+
+  async deleteSandbox() {
+    const {sandbox, tempory_folder} = this.configFile
+    try {
+      const sandboxKubFolder = path.join(tempory_folder, sandbox.name, 'kub-sandbox')
+      const sandboxAppsFolder = path.join(sandboxKubFolder, 'apps')
+      console.log('Dropping kub services...')
+      if (this._hasFiles(sandboxAppsFolder)) {
+        //  Execute drop command
+        this.dropServices(sandboxKubFolder)
+      } else {
+        throw new Error(`There's no file into ${sandboxAppsFolder}, There's no way to drop current sandbox`)
+      }
+    } catch (err) {
+      throw err
+    }
+  }
+
+  dropServices(directory) {
+    const dropSandboxScript = path.resolve(__dirname, '..', 'binaries', 'delete-kub.sh')
+    return execSync(`${dropSandboxScript} ${directory}`)
+  }
+
+  _hasFiles(folderPath) {
+    const files = this.readDirRecursive(folderPath)
+    return files.length > 0
+  }
+
+  readDirRecursive(dir, filesFounded = []) {
+    const files = fs.readdirSync(dir)
+    if (files.length) {
+      for (const file of files) {
+        const directory = path.join(dir, file)
+        const stat = fs.statSync(directory)
+        const isDirectory = stat.isDirectory()
+        if (isDirectory) {
+          this.readDirRecursive(directory, filesFounded)
+          // filesFounded.push(...filesReaded)
+        } else { // Is File
+          filesFounded.push(directory)
+        }
+      }
+    }
+    return filesFounded
   }
 }
 

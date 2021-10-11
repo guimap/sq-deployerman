@@ -241,8 +241,8 @@ class KubernetesDuplicater {
           }
         }
       }
-
-      const kubFilePath = path.join(yamlFrontendRepo, file.replace('.template', ''))
+      const fileName = file.replace('.template', '').replace('_', '-')
+      const kubFilePath = path.join(yamlFrontendRepo, fileName)
       fs.writeFileSync(kubFilePath, yaml.stringify(refYaml))
     }
 
@@ -355,10 +355,10 @@ class KubernetesDuplicater {
           hosts: rule.hosts.map(() => newDomain)
         }
       })
-      
+      const newPodName = `${nameProject}-${this.configFile.sandbox.name}`
       const newYamlContent = yaml.stringify(parsedYaml)
         .replace(new RegExp(namePod,'ig'), newName)
-        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${namePod.replace(/\-\w+/, `-${this.configFile.sandbox.name}`)}`)
+        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), newPodName)
       const projectFolder = path.join(this.kubFolderSandboxApps, namePod)
       this.createFolderIfNotExists(projectFolder)
       fs.writeFileSync(path.join(projectFolder, `${namePod}-ingress.yml`), newYamlContent)
@@ -450,7 +450,7 @@ class KubernetesDuplicater {
   createFolderIfNotExists(path) {
     if (!fs.existsSync(path)) fs.mkdirSync(path)
   }
-  
+
   getNamePod(podName) {
     return podName.replace(/\-\w+$/, '')
   }
@@ -458,7 +458,7 @@ class KubernetesDuplicater {
   applyKubFolder(kubFolder) {
     const pathBinary = path.join(path.resolve(__dirname, '..'), 'binaries')
     const command = `${pathBinary}/apply-kub.sh`
-    return execFileSync(command, [`./${kubFolder}`], { cwd: path.resolve(__dirname, '..', '..') } )
+    return execFileSync(command, [`${path.join(process.cwd(), kubFolder)}`], { cwd: path.resolve(__dirname, '..', '..') } )
   }
 
   isDomainSquidit(url) {

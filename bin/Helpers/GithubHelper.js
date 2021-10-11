@@ -47,7 +47,6 @@ class GithubHelper {
 
   async getCurrentCommit(repoPath) {
     return new Promise(async(resolve, reject) => {
-      
       try {
         const commit = execSync(`git rev-parse --short HEAD`, { cwd: repoPath}).toString()
         resolve(commit.replace('\n', ''))
@@ -64,7 +63,10 @@ class GithubHelper {
   }
 
   projectExists(path) {
-    return fs.existsSync(path)
+    if (fs.existsSync(path)) {
+      const files = fs.readdirSync(path)
+      return files.length > 0
+    }
   }
   
 }

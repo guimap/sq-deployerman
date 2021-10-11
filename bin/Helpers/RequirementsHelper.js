@@ -22,11 +22,17 @@ class RequirementsHelper {
       init: () => {
         this.createProjectFolder(configFile)
         this.projectShouldExists(configFile)
+        this.credentialsShouldExist(configFile)
       },
       'create-sandbox': () => {
         this.createProjectFolder(configFile)
         this.sandboxPropShouldExists(configFile)
+        this.credentialsShouldExist(configFile)
       }
+    }
+    rulesToValidate['drop-sandbox'] = () => {
+      rulesToValidate['create-sandbox']()
+      this.sandboxFolderExistsWithContent(configFile)
     }
     const validateFunction = rulesToValidate[this.commandName]
     if (validateFunction) validateFunction(configFile)
@@ -54,11 +60,37 @@ class RequirementsHelper {
     if (configFile.tempory_folder && !fs.existsSync(configFile.tempory_folder)) fs.mkdirSync(configFile.tempory_folder, { recursive: true })
   }
 
+  credentialsShouldExist(configFile) {
+    const {sandbox} = configFile
+    try {
+      console.log(`Checking if credentials.json exists`)
+      if (sandbox.credentials_path) {
+        if (fs.existsSync(sandbox.credentials_path)) {
+          const credentials = require(path.resolve(sandbox.credentials_path))
+          console.log(`[OK] Credentials`)
+          return !!credentials
+        }
+      }
+      throw new Error()
+    } catch (err) {
+      throw new Error(`Credentials files should exists, and it doesn exists on path "${sandbox.credentials_path}"`)
+    }
+  }
+
   configFileExists(configPath, relativePath = null) {
     let path = []
     if(relativePath) path.push(path)
     path.push(configPath)
     return fs.existsSync(path.join(...path).trim())
+  }
+
+  sandboxFolderExistsWithContent(configFile) {
+    const {sandbox, tempory_folder} = configFile
+    const sandboxFolder = path.join(tempory_folder, sandbox.name, 'kub-sandbox', 'apps')
+    if (fs.existsSync(sandboxFolder)) {
+      const files = fs.readdirSync(sandboxFolder)
+      return files.length > 0
+    }
   }
 
   async allCommandsExists(commands) {
