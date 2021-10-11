@@ -6,11 +6,13 @@ const lodash = require('lodash')
 const nunjuncks = require('nunjucks')
 const { execFile, execFileSync } = require('child_process')
 const environment = require('nunjucks/src/environment')
+const KubernetesHelper = require('./KubernetesHelper')
 class KubernetesDuplicater {
-  constructor(configFile, { githubHelper, dockerHelper, dnsHelper }) {
+  constructor(configFile, { githubHelper, dockerHelper, dnsHelper, kubernetesHelper }) {
     this.githubHelper = githubHelper
     this.dockerHelper = dockerHelper
     this.dnsHelper = dnsHelper
+    this.kubernetesHelper = kubernetesHelper || new KubernetesHelper(configFile)
 
     this.configFile = configFile
     this.sandboxName = configFile.sandbox.name
@@ -241,9 +243,10 @@ class KubernetesDuplicater {
           }
         }
       }
-      const fileName = file.replace('.template', '').replace('_', '-')
+      const fileName = file.replace('.template', '')
       const kubFilePath = path.join(yamlFrontendRepo, fileName)
       fs.writeFileSync(kubFilePath, yaml.stringify(refYaml))
+      fs.renameSync(kubFilePath, kubFilePath.replace('_', '-'))
     }
 
     console.log('YAML Criado')
@@ -357,7 +360,7 @@ class KubernetesDuplicater {
       })
       const newPodName = `${nameProject}-${this.configFile.sandbox.name}`
       const newYamlContent = yaml.stringify(parsedYaml)
-        .replace(new RegExp(namePod,'ig'), newName)
+        .replace(new RegExp(parsedYaml.metadata.name,'ig'), `${newName}-${this.newNamespace}`)
         .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), newPodName)
       const projectFolder = path.join(this.kubFolderSandboxApps, namePod)
       this.createFolderIfNotExists(projectFolder)
@@ -395,7 +398,7 @@ class KubernetesDuplicater {
         for (const container of containers) {
           const enviroments = container.env || []
           for (const environment of enviroments) {
-            if (this.isDomainSquidit(environment.value)) {
+            if (this.kubernetesHelper.isDomainSquidit(environment.value)) {
               if (environment.value.includes('.squidit')) environment.value = environment.value.replace(/((http[s]*)\:\/)*\w+\-/ig, `${this.newNamespace}-`)
               else environment.value = environment.value.replace(/\-\w+/,  `-${this.newNamespace}`)
             }
@@ -407,7 +410,7 @@ class KubernetesDuplicater {
       const projectFolder = path.join(this.kubFolderSandboxApps, namePod)
       this.createFolderIfNotExists(projectFolder)
       const newYamlContent = yaml.stringify(parsedYaml)
-        .replace(new RegExp(namePod,'ig'), newName)
+        .replace(new RegExp(parsedYaml.metadata.name,'ig'), `${newName}-${this.newNamespace}`)
         .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${this.configFile.sandbox.name}`)
       
       fs.writeFileSync(path.join(this.kubFolderSandboxApps, namePod, `${namePod}-deployment.yml`), newYamlContent)
@@ -441,7 +444,7 @@ class KubernetesDuplicater {
       const projectFolder = path.join(this.kubFolderSandboxApps, namePod)
       this.createFolderIfNotExists(projectFolder)
       const newYamlContent = yaml.stringify(parsedYaml)
-        .replace(new RegExp(namePod,'ig'), newName)
+        .replace(new RegExp(parsedYaml.metadata.name,'ig'), `${newName}-${this.newNamespace}`)
         .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${this.configFile.sandbox.name}`)
       fs.writeFileSync(path.join(this.kubFolderSandboxApps, namePod, `${namePod}-svc.yml`), newYamlContent)
     }
@@ -461,15 +464,7 @@ class KubernetesDuplicater {
     return execFileSync(command, [`${path.join(process.cwd(), kubFolder)}`], { cwd: path.resolve(__dirname, '..', '..') } )
   }
 
-  isDomainSquidit(url) {
-    try {
-      new URL(url)
-      const rgxIsSquid = /http[s]*\:\/\/\w+(\.squidit|\-\w+)/gm
-      return rgxIsSquid.exec(url)
-    } catch (err) {
-      return false
-    }
-  }
+  
 
   parseToURL(url) {
     try {

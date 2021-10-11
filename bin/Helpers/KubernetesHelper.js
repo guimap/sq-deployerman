@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const yaml = require('yaml')
+const { execFileSync, exec, execSync } = require('child_process')
 const nunjuncks = require('nunjucks')
 const lodash = require('lodash')
 
@@ -10,6 +11,7 @@ class KubernetesHelper {
   }
 
   async applyDeployment(githubInfo, env, project) {
+    const newNamespace = project.target_namespace || configFile.sandbox.name
     const {
       localRepoPath,
       commit,
@@ -56,8 +58,8 @@ class KubernetesHelper {
         imageTagDocker = imageTag
         break
       }
-
     }
+    if (!imageTagDocker) throw new Error(`Cannot find an imagem from your current Image`)
 
     const fieldsToDelete = [
       'metadata.uid',
@@ -72,56 +74,59 @@ class KubernetesHelper {
     
     //  Parse yml
     for (const yamlFilePath of yamlFiles) {
-      const yamlPath = path.join(yamlTemplatePath, yamlFilePath)
-      const yamlNunjucks = nunjuncks
-      .configure(yamlPath, nunjucksOpts)
+      try {
+        const yamlPath = path.join(yamlTemplatePath, yamlFilePath)
+        const yamlNunjucks = nunjuncks
+        .configure(yamlPath, nunjucksOpts)
+        
+        const yamlContent = fs.readFileSync(yamlPath).toString()
+        const yamlParsed = yamlNunjucks.renderString(yamlContent, {
+          ...env,
+          WERCKER_GIT_COMMIT: commit,
+          IMAGE_TAG: imageTagDocker,
+          REPOSITORY_NAME: repoName
+        })
+        const yamlObject = yaml.parse(yamlParsed)
+        const namePod = yamlObject.metadata.name
+        const [nameProject] = namePod.split('-')
+        const newName = namePod.replace(/\-\w+/, `-${newNamespace}`)
+        yamlObject.metadata.namespace = newNamespace
+        yamlObject.metadata.labels = {
+          ...yamlObject.metadata.labels,
+          generatedBy: 'deployerman'
+        }
+
+        if (yamlObject.kind === 'Ingress') {
+          //  Remap DNS
+          yamlObject.spec.rules = yamlObject.spec.rules.filter(rule => rule.host)
       
-      const yamlContent = fs.readFileSync(yamlPath).toString()
-      const yamlParsed = yamlNunjucks.renderString(yamlContent, {
-        ...env,
-        WERCKER_GIT_COMMIT: commit,
-        IMAGE_TAG: imageTagDocker,
-        REPOSITORY_NAME: repoName
-      })
-      const yamlObject = yaml.parse(yamlParsed)
-      const namePod = yamlObject.metadata.name
-      const [nameProject] = namePod.split('-')
-      const newName = namePod.replace(/\-\w+/, `-${project.target_namespace}`)
-      yamlObject.metadata.namespace = project.target_namespace
-      yamlObject.metadata.labels = {
-        ...yamlObject.metadata.labels,
-        generatedBy: 'deployerman'
-      }
+          yamlObject.spec.tls = yamlObject.spec.tls.map(rule => {
+            if (!rule.hosts) return rule
+            return {
+              ...rule,
+              hosts: rule.hosts.filter((host) => host)
+            }
+        })
+        }
 
-      if (yamlObject.kind === 'Ingress') {
-        //  Remap DNS
-        // const namePod = yamlObject.metadata.name.replace(/(prd|stg|dev)/i, '').replace('-', '')
-        // const newDNS = `${project.tagert_namespace}-${namePod}.squidit.com.br`
-        //  Replace to new dns
-        yamlObject.spec.rules = yamlObject.spec.rules.filter(rule => rule.host)
-    
-        yamlObject.spec.tls = yamlObject.spec.tls.map(rule => {
-          if (!rule.hosts) return rule
-          return {
-            ...rule,
-            hosts: rule.hosts.filter((host) => host)
-          }
-      })
-      }
+        for(const removeField of fieldsToDelete) {
+          lodash.unset(yamlObject, removeField)
+        }
 
-      for(const removeField of fieldsToDelete) {
-        lodash.unset(yamlObject, removeField)
+        //  Write into kub folder
+        const kubFilePath = path.join(yamlKubPath, yamlFilePath.replace('.template', ''))
+        const yamlContentString = yaml.stringify(yamlObject)
+        const newYamlContent = yamlContentString
+          .replace(new RegExp(namePod,'ig'), newName)
+          .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${newNamespace}`)
+        fs.writeFileSync(kubFilePath, newYamlContent)
+        //  apply command
+        await this.applyFile(kubFilePath)
+      } catch (err) {
+        console.error(`Fail on ${yamlFilePath}`)
+        console.error(err)
       }
-
-      //  Write into kub folder
-      const kubFilePath = path.join(yamlKubPath, yamlFilePath.replace('.template', ''))
-      const yamlContentString = yaml.stringify(yamlObject)
-      const newYamlContent = yamlContentString
-        .replace(new RegExp(namePod,'ig'), newName)
-        .replace(new RegExp(`\\b${nameProject}\\-\\w+$`, 'igm'), `${nameProject}-${project.target_namespace}`)
-      fs.writeFileSync(kubFilePath, newYamlContent)
-      //  apply command
-      await this.applyFile(kubFilePath)
+      
     }
 
     console.log('Done')
@@ -145,46 +150,14 @@ class KubernetesHelper {
 
   existsImage (url, tag) {
     return new Promise(async (resolve) => {
-      // let response = ''
       const basePathBinaries = path.join(path.resolve(__dirname, '..'), 'binaries')
       
       try {
         const output = execFileSync(`${basePathBinaries}/check-image.sh`, [url, tag])
-        // console.log(output.toString())
         resolve(true)
       } catch (err) {
         resolve(false)
       }
-      // , (err, stdout) => {
-      //   if (err) {
-      //     console.error(err)
-      //     resolve(false)
-      //   } else {
-      //     try {
-      //       const result = JSON.parse(stdout)
-      //       resolve(!!result)
-      //     } catch (er) {
-      //       resolve(false)
-      //     }
-      //   }
-      // })
-    //   const process = spawn('docker', `manifest inspect ${url}`.split(' '), {stdio: ['pipe', writableOutput, writableError]})
-    //   // process.stderr.on('data', () => resolve(false))
-    //   // process.on('error', () => resolve(false))
-      
-    //   process.stdout.on('data', data => {
-    //     response+=data.toString()
-    //   })
-
-    //   process.on('exit', code => {
-    //     if(code !== 0) return resolve(false)
-    //     try {
-    //       const result = JSON.parse(response)
-    //       resolve(!!result)
-    //     } catch (er) {
-    //       resolve(false)
-    //     }
-    //   })
     })
   }
 
@@ -201,7 +174,8 @@ class KubernetesHelper {
         throw new Error(`There's no file into ${sandboxAppsFolder}, There's no way to drop current sandbox`)
       }
     } catch (err) {
-      throw err
+      console.log(`Fail on delete kub services`)
+      console.error(err)
     }
   }
 
@@ -231,6 +205,16 @@ class KubernetesHelper {
       }
     }
     return filesFounded
+  }
+
+  isDomainSquidit(url) {
+    try {
+      new URL(url)
+      const rgxIsSquid = /http[s]*\:\/\/\w+(\.squidit|\-\w+)/gm
+      return rgxIsSquid.exec(url)
+    } catch (err) {
+      return false
+    }
   }
 }
 

@@ -43,16 +43,15 @@ module.exports = {
 
           //  Load envFile
           let parsed
-          
+          const newKubServiceName = project.kubServiceName.replace(/\-\w+/, `-${configFile.sandbox.name}`)
           let envContent = {
             CONTAINER_PORT: project.kubContainerPort,
             GCR_HOST: configFile.google.GCR_HOST,
             GCR_PROJECT_ID: configFile.google.GCR_PROJECT_ID,
             HPA_MIN_PODS: 1,
             HPA_MAX_PODS: 1,
-            CONTAINER_PORT: 6081,
             KUB_SERVICE_PORT: 80,
-            KUB_SERVICE: project.kubServiceName || parsed.KUB_SERVICE
+            KUB_SERVICE: newKubServiceName
           }
           //  Get current yaml
           const pathToDownload = path.join(configFile.tempory_folder)
@@ -114,6 +113,16 @@ module.exports = {
             }
           }
 
+          //  Modifica o arquivo .env para redirecionar as requests interna para o namespace atual
+          const newNamespace = project.target_namespace || configFile.sandbox.name
+          for (const envProp in envContent) {
+            const envValue = envContent[envProp]
+            if (kubernetesHelper.isDomainSquidit(envValue)) {
+              if (envValue.includes('.squidit')) envContent[envProp] = envValue.replace(/((http[s]*)\:\/)*\w+\-/ig, `${newNamespace}-`)
+              else envContent[envProp] = envValue.replace(/\-\w+/,  `-${newNamespace}`)
+            }
+          }
+
           const {
             localRepoPath,
             commit: currentCommit,
@@ -139,9 +148,6 @@ module.exports = {
         fs.rmSync(githubProjectsFolderPath, { recursive: true })
       }
     }
-
-   
-
   }
 
 }
