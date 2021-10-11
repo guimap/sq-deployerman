@@ -65,13 +65,22 @@ class DNSHelper {
     const dnsList = new Set()
     for (const project of projects) {
       const ingressPath = path.join(sandboxFolderApps, project, `${project}-ingress.yml`)
-      if (!fs.existsSync(ingressPath)) continue
-      const yamlContent = fs.readFileSync(ingressPath).toString()
+      const frontEndIngress = path.join(sandboxFolderApps, project, `kub-ingress.yml`)
+      let yamlContent
+      if (fs.existsSync(ingressPath)) {
+        yamlContent = fs.readFileSync(ingressPath).toString()
+      } else if (fs.existsSync(frontEndIngress)) {
+        yamlContent = fs.readFileSync(frontEndIngress).toString()
+      } else {
+        continue
+      }
       const yamlParsed = yaml.parse(yamlContent)
       const hosts = yamlParsed.spec.rules.filter(rule => !!rule.host)
       const domains = hosts.map(host => host.host)
       dnsList.add(...domains)
     }
+
+    //  Get san
     return Array.from(dnsList)
   }
 
