@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "nodemon t.js",
-    "init": "node ./bin/index.js init -c ./config.json",
+    "apply-project": "node ./bin/index.js apply-project -c ./config.json",
     "create-sandbox": "node ./bin/index.js create-sandbox -c ./config.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

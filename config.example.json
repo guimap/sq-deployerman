@@ -5,7 +5,7 @@
     "namespace_reference": "staging",
     "credentials_path": "./credentials.json",
     "kubernetes": {
-      "cluster_ip": "35.196.169.31",
+      "cluster_ip": "<CLUER-IP>",
       "reference_namespaces": ["staging"]
     },
     "frotend_repos": [
