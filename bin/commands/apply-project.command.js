@@ -2,14 +2,13 @@ const fs = require('fs')
 const path = require('path')
 const { URL } = require('url')
 const GithubHelper = require('../Helpers/GithubHelper')
-const DockerHelper = require('../Helpers/DockerHelper')
 const yaml = require('yaml')
 const RequirementsHelper = require('../Helpers/RequirementsHelper')
 const KubernetesHelper = require('../Helpers/KubernetesHelper')
 const { execFileSync } = require('child_process')
 
 module.exports = {
-  command: 'init',
+  command: 'apply-project',
   describe: 'Dado um objeto de configuração, faz deploy de branch especificas para um ns de k8 ja existente',
   example: '$0 init -c ./config.json',
   alias: ['c', 'config'],
