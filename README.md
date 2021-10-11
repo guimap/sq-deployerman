@@ -21,13 +21,26 @@ deployerman -h
 - gcloud instalado com versão Google Cloud SDK 358.0.0 ou superior
 - gcloud instalado de forma global - https://cloud.google.com/sdk/docs/install#deb
 - docker instalado
-- Previlégios de criar namespaces e dar apply no kubernetes
+- Previlégios de criar namespaces e dar apply e delete no kubernetes
 - Previlegios de criar DNS cloud domain
 - Baixar um `credentials.json` do seu usuario, com permissão de `storage.bucket`
 - GCR configurado com o docker. Caso não saiba como fazer [siga esse tutorial](https://cloud.google.com/container-registry/docs/advanced-authentication)
 ```sh
 gcloud auth configure-docker
 ```
+
+--- 
+
+- config.json example
+- Explicando cada propriedade do config
+- explicando como dar create-sandbox
+- explicando como o create-sandbox funciona
+- explicando como dar apply-project
+- explicando como o apply-project funciona
+- explicar o porque precisa da .env, o kubServiceName e o port
+- explicando como dar drop-sandbox
+- explicando como o drop-sandbox funciona
+
 
 --- 
 Precisa ter o .env que existe no lens, contando com CONTAINER_PORT GCR E TALS
@@ -43,5 +56,3 @@ Gere a token e adicione no seu `.bashrc` ou `zshrc` como DEPLOYER_GITHUB_TOKEN
   # resto do sh
   export $DEPLOYER_GITHUB_TOKEN=<MINHA-TOKNE>
 ```
-
-Caso prefira, voce pode definir um nome customizável no seu arquivo de configuração na propriedade "github.github_token_name"
