@@ -58,8 +58,6 @@ class RequirementsHelper {
     if (!configFile.sandbox) throw new Error(`prop sandbox is required`)
     if (!configFile.sandbox.name) throw new Error(`prop sandbox.name is required`)
     if (!configFile.sandbox.kubernetes) throw new Error(`prop sandbox.kubernetes is required`)
-    if (!configFile.sandbox.kubernetes.reference_namespaces) throw new Error(`prop sandbox.kubernetes.reference_namespaces is required`)
-    if (!configFile.sandbox.kubernetes.reference_namespaces.length) throw new Error(`prop sandbox.kubernetes should have at least one`)
     return true
   }
 

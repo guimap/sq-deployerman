@@ -100,10 +100,14 @@ class KubernetesDuplicater {
         
         const domainFrontEnd = `${this.sandboxName}-${frontendRepo.domainPrefix}.squidit.com.br`
         this.domainsToCreate.push(domainFrontEnd)
-        //  Load .env of project
-        const {parsed} = require('dotenv').config({
-          path: frontendRepo.envFile
-        })
+        let parsed = {}
+        if (frontendRepo.envFile) {
+          //  Load .env of project
+          const {parsed: envFileContent} = require('dotenv').config({
+            path: frontendRepo.envFile
+          })
+          parsed = envFileContent
+        }
         
         const envContent = {
           ...parsed,
@@ -169,6 +173,7 @@ class KubernetesDuplicater {
 
   ovewriteRoutFile ({projectPath, endpointFile}) {
     const endpointFilePath = path.join(projectPath, endpointFile)
+    if (!fs.existsSync(endpointFilePath)) return {}
     const routeFileContent = fs.readFileSync(endpointFilePath).toString()
     const domainsWithouPrefix = this.domainsToCreate.map(domain => {
       return {
