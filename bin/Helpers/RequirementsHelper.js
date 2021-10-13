@@ -19,17 +19,18 @@ class RequirementsHelper {
 
     const configFile = JSON.parse(fs.readFileSync(path.join(relativePath, configPath)))
     const rulesToValidate = {
-      init: () => {
-        this.createProjectFolder(configFile)
-        this.projectShouldExists(configFile)
-        this.credentialsShouldExist(configFile)
-      },
       'create-sandbox': () => {
         this.createProjectFolder(configFile)
-        this.sandboxPropShouldExists(configFile)
         this.credentialsShouldExist(configFile)
+        this.checkSandboxProps(configFile)
       }
     }
+    rulesToValidate['apply-project'] = () => {
+      //  Extends Requirements to create-sandbox
+      rulesToValidate['create-sandbox']()
+      this.projectShouldExists(configFile)
+    }
+
     rulesToValidate['drop-sandbox'] = () => {
       rulesToValidate['create-sandbox']()
       this.sandboxFolderExistsWithContent(configFile)
@@ -37,6 +38,12 @@ class RequirementsHelper {
     const validateFunction = rulesToValidate[this.commandName]
     if (validateFunction) validateFunction(configFile)
     return configFile
+  }
+
+  checkSandboxProps (configFile) {
+    const {sandbox} = configFile
+    if (sandbox.name.length === 1) throw new Error(`${sandbox.name} is not valid, sandbox name should have more than 1 character`)
+    if (sandbox.name.length > 3) throw new Error(`${sandbox.name} is not valid, sandbox name should have less than 3 character`)
   }
 
   projectShouldExists(configFile) {
