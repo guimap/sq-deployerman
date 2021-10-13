@@ -7,6 +7,7 @@
     "start:dev": "nodemon t.js",
     "apply-project": "node ./bin/index.js apply-project -c ./config.json",
     "create-sandbox": "node ./bin/index.js create-sandbox -c ./config.json",
+    "drop-sandbox": "node ./bin/index.js drop-sandbox -c ./config.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {

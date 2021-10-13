@@ -1,11 +1,11 @@
 {
-  "tempory_folder": "./tmp",
+  "tempory_folder": "./path-folder",
   "sandbox": {
-    "name": "pxe",
+    "name": "so",
     "namespace_reference": "staging",
     "credentials_path": "./credentials.json",
     "kubernetes": {
-      "cluster_ip": "<CLUER-IP>",
+      "cluster_ip": "<IP_FILE>",
       "reference_namespaces": ["staging"]
     },
     "frotend_repos": [
@@ -24,7 +24,7 @@
       {
         "repo": "https://github.com/squidit/web-squidhub",
         "endpointFile": "src/api.endpoints.js",
-        "branch": "feature/sandbox-change",
+        "branch": "feature/remove-duplicated-request",
         "envFile": ".env.hub",
         "domainPrefix": "app",
         "kubServiceName": "hub",
@@ -39,10 +39,12 @@
   "projects": [
     {
       "repo": "https://github.com/squidit/api-heimdall",
-      "branch": "release",
-      "envfile": "./.env.heimdall",
+      "branch": "feature/doc-free",
+      "kubNamespace": "staging",
       "kubServiceName": "heim-stg",
-      "kubContainerPort": "6789"
+      "kubContainerPort": "6081",
+      "envFile": ".env.heimdall",
+      "target_namespace": "gd"
     }
   ],
   "google": {
