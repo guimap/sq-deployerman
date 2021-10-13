@@ -5,8 +5,7 @@
     "namespace_reference": "staging",
     "credentials_path": "./credentials.json",
     "kubernetes": {
-      "cluster_ip": "<IP_FILE>",
-      "reference_namespaces": ["staging"]
+      "cluster_ip": "<IP_FILE>"
     },
     "frotend_repos": [
       {
